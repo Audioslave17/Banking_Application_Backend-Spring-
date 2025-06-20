@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import project.banking.dto.AccountDto;
+import project.banking.dto.TransferFundDto;
 import project.banking.entity.Account;
 import project.banking.exception.AccountException;
 import project.banking.mapper.AccountMapper;
@@ -93,6 +94,23 @@ public class AccountServiceImpl implements AccountService{
         .orElseThrow(() -> new AccountException("dose not exist"));
 
         accountRepository.deleteById(id);
+    }
+
+
+    @Override
+    public void transferFunds(TransferFundDto transferFundDto) {
+        Account fromAccount = accountRepository.findById(transferFundDto.fromAccountId())
+            .orElseThrow(() -> new AccountException("Account does not exist"));
+        
+        Account toAccount = accountRepository.findById(transferFundDto.toAccountId())
+            .orElseThrow(() -> new AccountException("Account does not exist"));
+
+        fromAccount.setBalance(fromAccount.getBalance() - transferFundDto.amount());
+
+        toAccount.setBalance(toAccount.getBalance() + transferFundDto.amount());
+
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
     }
 
 }
