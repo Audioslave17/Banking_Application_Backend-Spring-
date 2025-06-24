@@ -1,5 +1,6 @@
 package project.banking.service.impl;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,9 +9,11 @@ import org.springframework.stereotype.Service;
 import project.banking.dto.AccountDto;
 import project.banking.dto.TransferFundDto;
 import project.banking.entity.Account;
+import project.banking.entity.Transaction;
 import project.banking.exception.AccountException;
 import project.banking.mapper.AccountMapper;
 import project.banking.repository.AccountRepository;
+import project.banking.repository.TransactionRepository;
 import project.banking.service.AccountService;
 
 @Service
@@ -18,9 +21,15 @@ public class AccountServiceImpl implements AccountService{
 
     private AccountRepository accountRepository;
 
+    private TransactionRepository transactionRepository;
+
+    private static final String TRANSACTION_TYPE_DEPOSIT = "DEPOSIT";
+    private static final String TRANSACTION_TYPE_WITHDRAW = "WITHDRAW";
+
     
-    public AccountServiceImpl(AccountRepository accountRepository) {
+    public AccountServiceImpl(AccountRepository accountRepository, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
     }
 
 
@@ -54,6 +63,15 @@ public class AccountServiceImpl implements AccountService{
         double total = account.getBalance() + amount;
         account.setBalance(total);
         Account savedAccount = accountRepository.save(account);
+
+        
+        Transaction transaction = new Transaction();
+        transaction.setAccountId(id);
+        transaction.setAmount(amount);
+        transaction.setTransactionType(TRANSACTION_TYPE_DEPOSIT);
+        transaction.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(transaction);
+
         return AccountMapper.matToAccountDto(savedAccount);
     }
 
@@ -73,6 +91,14 @@ public class AccountServiceImpl implements AccountService{
         double total = account.getBalance() - amount;
         account.setBalance(total);
         Account savaedAccount = accountRepository.save(account);
+
+
+        Transaction transaction = new Transaction();
+        transaction.setAccountId(id);
+        transaction.setAmount(amount);
+        transaction.setTransactionType(TRANSACTION_TYPE_WITHDRAW);
+        transaction.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(transaction);
 
         return AccountMapper.matToAccountDto(savaedAccount);
     }
