@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import project.banking.dto.AccountDto;
+import project.banking.dto.TransactionDto;
 import project.banking.dto.TransferFundDto;
 import project.banking.service.AccountService;
 
@@ -70,5 +71,12 @@ public class AccountController {
     public ResponseEntity<String> transferFund(@RequestBody TransferFundDto transferFundDto){
         accountService.transferFunds(transferFundDto);
         return ResponseEntity.ok("Transfer successful");
+    }
+
+
+    @GetMapping("/{id}/transactions")
+    public ResponseEntity<List<TransactionDto>> fetchAccountTransactions(@PathVariable("id") Long accountId) {
+        List<TransactionDto> transactions = accountService.getAccountTransactions(accountId);
+        return ResponseEntity.ok(transactions);
     }
 }

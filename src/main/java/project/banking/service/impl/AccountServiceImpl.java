@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import project.banking.dto.AccountDto;
+import project.banking.dto.TransactionDto;
 import project.banking.dto.TransferFundDto;
 import project.banking.entity.Account;
 import project.banking.entity.Transaction;
@@ -25,6 +26,7 @@ public class AccountServiceImpl implements AccountService{
 
     private static final String TRANSACTION_TYPE_DEPOSIT = "DEPOSIT";
     private static final String TRANSACTION_TYPE_WITHDRAW = "WITHDRAW";
+    private static final String TRANSACTION_TYPE_TRANSFER = "TRANSFER";
 
     
     public AccountServiceImpl(AccountRepository accountRepository, TransactionRepository transactionRepository) {
@@ -131,12 +133,42 @@ public class AccountServiceImpl implements AccountService{
         Account toAccount = accountRepository.findById(transferFundDto.toAccountId())
             .orElseThrow(() -> new AccountException("Account does not exist"));
 
+        if(fromAccount.getBalance() < transferFundDto.amount()){
+            throw new RuntimeException("insufficient balance");
+        }
+
         fromAccount.setBalance(fromAccount.getBalance() - transferFundDto.amount());
 
         toAccount.setBalance(toAccount.getBalance() + transferFundDto.amount());
 
         accountRepository.save(fromAccount);
         accountRepository.save(toAccount);
+
+        Transaction transaction = new Transaction();
+        transaction.setAccountId(transferFundDto.fromAccountId());
+        transaction.setAmount(transferFundDto.amount());
+        transaction.setTransactionType(TRANSACTION_TYPE_TRANSFER);
+        transaction.setTimestamp(LocalDateTime.now());
+        transactionRepository.save(transaction);
     }
 
+
+    @Override
+    public List<TransactionDto> getAccountTransactions(Long accountId) {
+        List<Transaction> transactions = transactionRepository.findByAccountIdOrderByTimestampDesc(accountId);
+
+        return transactions.stream()
+            .map((transaction) -> convertEntityToDto(transaction))
+            .collect(Collectors.toList());
+    }
+
+    private TransactionDto convertEntityToDto(Transaction transaction){
+        return new TransactionDto(
+            transaction.getId(),
+            transaction.getAccountId(),
+            transaction.getAmount(),
+            transaction.getTransactionType(),
+            transaction.getTimestamp()
+        );
+    }
 }
